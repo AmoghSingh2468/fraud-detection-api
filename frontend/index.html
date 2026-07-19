@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fraud Detection Engine</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<div class="app">
+
+  <!-- ===== HEADER ===== -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <path d="M11 1 L20 6 V15 L11 21 L2 15 V6 Z" stroke="var(--signal)" stroke-width="1.4"/>
+        <path d="M11 6 L15.5 8.5 V13.5 L11 16 L6.5 13.5 V8.5 Z" fill="var(--signal)" opacity="0.85"/>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-title">FRAUD&#8202;/&#8202;DETECT</span>
+        <span class="brand-sub">real-time transaction risk engine</span>
+      </div>
+    </div>
+
+    <div class="status-cluster">
+      <div class="stat">
+        <span class="stat-label">endpoint</span>
+        <input id="apiBase" class="api-input" value="" placeholder="same origin" spellcheck="false">
+      </div>
+      <div class="stat">
+        <span class="stat-label">status</span>
+        <span class="status-pill" id="healthPill"><i class="dot"></i>checking</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">avg latency</span>
+        <span class="stat-value" id="avgLatency">&mdash;</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN GRID ===== -->
+  <main class="grid">
+
+    <!-- LEFT: INPUT -->
+    <section class="panel input-panel">
+      <div class="panel-head">
+        <span class="panel-title">01&nbsp;&mdash;&nbsp;transaction</span>
+        <span class="panel-hint">select a scenario or edit manually</span>
+      </div>
+
+      <div class="field-row">
+        <label>scenario</label>
+        <select id="scenarioSelect" class="select">
+          <option value="typical">Typical purchase — low amount, daytime</option>
+          <option value="suspicious">Late-night large transfer — anomalous pattern</option>
+          <option value="custom">Custom — edit raw feature vector</option>
+        </select>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label>amount (₹)</label>
+          <input type="number" id="amountInput" class="input" value="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>time (sec since first txn)</label>
+          <input type="number" id="timeInput" class="input" value="406">
+        </div>
+      </div>
+
+      <details id="rawDetails" class="raw-details">
+        <summary>V1&ndash;V28 — PCA-anonymized features <span class="muted">(from original dataset, not human-readable — pulled from scenario)</span></summary>
+        <div class="raw-grid" id="rawGrid"></div>
+      </details>
+
+      <button id="runBtn" class="run-btn">
+        <span>RUN PREDICTION</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 2 L12 7 L3 12 Z" fill="currentColor"/></svg>
+      </button>
+
+      <div class="stack-tags">
+        <span class="tag">FastAPI</span>
+        <span class="tag">XGBoost</span>
+        <span class="tag">Isolation Forest</span>
+        <span class="tag">SHAP</span>
+        <span class="tag">SMOTE</span>
+        <span class="tag">SQLAlchemy</span>
+      </div>
+    </section>
+
+    <!-- RIGHT: RESULT -->
+    <section class="panel result-panel">
+      <div class="panel-head">
+        <span class="panel-title">02&nbsp;&mdash;&nbsp;risk assessment</span>
+        <span class="panel-hint" id="latencyReadout">latency: &mdash;</span>
+      </div>
+
+      <div class="result-top">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 200 120" class="gauge">
+            <path d="M20,110 A80,80 0 0 1 180,110" class="gauge-track"/>
+            <path d="M20,110 A80,80 0 0 1 180,110" class="gauge-fill" id="gaugeFill"/>
+            <g id="needle" class="needle-group">
+              <line x1="100" y1="110" x2="100" y2="40" class="needle"/>
+              <circle cx="100" cy="110" r="5" class="needle-pivot"/>
+            </g>
+          </svg>
+          <div class="gauge-readout">
+            <span class="gauge-value" id="probValue">&mdash;</span>
+            <span class="gauge-label">fraud probability</span>
+          </div>
+        </div>
+
+        <div class="metrics-col">
+          <div class="risk-badge" id="riskBadge">&mdash;</div>
+          <div class="metric-line">
+            <span>anomaly score</span>
+            <span class="mono" id="anomalyValue">&mdash;</span>
+          </div>
+          <div class="metric-line">
+            <span>model verdict</span>
+            <span class="mono" id="verdictValue">awaiting input</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="shap-section">
+        <div class="shap-head">
+          <span class="panel-title small">feature contributions</span>
+          <div class="shap-legend">
+            <span><i class="sw sw-red"></i>pushes toward fraud</span>
+            <span><i class="sw sw-green"></i>pushes away from fraud</span>
+          </div>
+        </div>
+        <div id="shapChart" class="shap-chart">
+          <div class="shap-empty">Run a prediction to see which features drove the score.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== LOG FEED ===== -->
+  <section class="panel log-panel">
+    <div class="panel-head">
+      <span class="panel-title">03&nbsp;&mdash;&nbsp;session log</span>
+      <span class="panel-hint">most recent first, this browser session only</span>
+    </div>
+    <div id="logFeed" class="log-feed">
+      <div class="log-empty">No predictions yet.</div>
+    </div>
+  </section>
+
+  <footer class="footnote">
+    Every request is scored by a supervised XGBoost model and an unsupervised Isolation Forest in parallel, explained live with SHAP, and logged to a SQLAlchemy-backed store &mdash; end to end in single-digit milliseconds.
+  </footer>
+
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
