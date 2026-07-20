@@ -4,6 +4,5 @@ __pycache__/
 .env
 data/raw/*.csv
 data/processed/*.csv
-models/*.pkl
 *.db
 .DS_Store

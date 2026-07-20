@@ -1,3 +1,11 @@
+---
+title: Real-Time Fraud Detection API
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
 # Real-Time Fraud Detection API
 
 FastAPI service combining a supervised XGBoost classifier with an unsupervised
@@ -11,26 +19,26 @@ to a SQLAlchemy-backed database.
 
 ```
 fraud-detection-api/
-├── data/
-│   ├── raw/                  # put creditcard.csv here (see Dataset below)
-│   └── processed/            # train/test splits get written here
-├── models/                   # trained model artifacts (.pkl) land here
-├── src/
-│   ├── config.py              # paths, constants, env vars
-│   ├── data_preprocessing.py  # load, split, scale, SMOTE
-│   ├── train_xgboost.py       # trains + saves the supervised model
-│   ├── train_isolation_forest.py  # trains + saves the anomaly model
-│   ├── explainer.py           # SHAP TreeExplainer wrapper
-│   ├── database.py            # SQLAlchemy engine/session/table
-│   ├── schemas.py              # Pydantic request/response models
-│   └── main.py                # FastAPI app + /predict endpoint
-├── tests/
-│   └── test_api.py
-├── run.py                    # uvicorn entrypoint
-├── requirements.txt
-├── Dockerfile
-├── .env.example
-└── .gitignore
+â”œâ”€â”€ data/
+â”‚   â”œâ”€â”€ raw/                  # put creditcard.csv here (see Dataset below)
+â”‚   â””â”€â”€ processed/            # train/test splits get written here
+â”œâ”€â”€ models/                   # trained model artifacts (.pkl) land here
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ config.py              # paths, constants, env vars
+â”‚   â”œâ”€â”€ data_preprocessing.py  # load, split, scale, SMOTE
+â”‚   â”œâ”€â”€ train_xgboost.py       # trains + saves the supervised model
+â”‚   â”œâ”€â”€ train_isolation_forest.py  # trains + saves the anomaly model
+â”‚   â”œâ”€â”€ explainer.py           # SHAP TreeExplainer wrapper
+â”‚   â”œâ”€â”€ database.py            # SQLAlchemy engine/session/table
+â”‚   â”œâ”€â”€ schemas.py              # Pydantic request/response models
+â”‚   â””â”€â”€ main.py                # FastAPI app + /predict endpoint
+â”œâ”€â”€ tests/
+â”‚   â””â”€â”€ test_api.py
+â”œâ”€â”€ run.py                    # uvicorn entrypoint
+â”œâ”€â”€ requirements.txt
+â”œâ”€â”€ Dockerfile
+â”œâ”€â”€ .env.example
+â””â”€â”€ .gitignore
 ```
 
 ## Dataset
@@ -38,7 +46,7 @@ fraud-detection-api/
 Use the Kaggle "Credit Card Fraud Detection" dataset (ULB):
 https://www.kaggle.com/mlg-ulb/creditcardfraud
 
-It has 284,807 transactions, 492 frauds → 0.172% fraud rate — this is exactly
+It has 284,807 transactions, 492 frauds â†’ 0.172% fraud rate â€” this is exactly
 the number your resume line references. Columns: `Time`, `Amount`, `V1..V28`
 (PCA-anonymized features), `Class` (1 = fraud).
 
@@ -87,7 +95,7 @@ flagged even if XGBoost alone wouldn't have caught it.
 ## Why SMOTE only on the training set
 
 Fraud is 0.17% of transactions. Training directly on that imbalance means
-the model can get 99.8% "accuracy" by always predicting "not fraud" — useless.
+the model can get 99.8% "accuracy" by always predicting "not fraud" â€” useless.
 SMOTE synthetically oversamples the minority (fraud) class so XGBoost sees a
 balanced signal during training. It's applied **after** the train/test split
 so the test set stays representative of real-world imbalance (no leakage).
@@ -96,7 +104,7 @@ so the test set stays representative of real-world imbalance (no leakage).
 
 `shap.TreeExplainer` is optimized for tree-based models (XGBoost, Random
 Forest, Isolation Forest) and computes exact Shapley values fast enough for
-per-request use — unlike the generic `shap.Explainer`/KernelExplainer, which
+per-request use â€” unlike the generic `shap.Explainer`/KernelExplainer, which
 is far too slow for a sub-100ms latency budget.
 
 ## Latency strategy
@@ -105,7 +113,7 @@ is far too slow for a sub-100ms latency budget.
   never per-request.
 - Single-row inference avoids batching overhead.
 - SHAP TreeExplainer on a single row is typically 1-5ms for a shallow-depth
-  XGBoost model — cheap enough to run on every request.
+  XGBoost model â€” cheap enough to run on every request.
 - DB logging is done as a lightweight synchronous insert after the response
   is computed (you can switch this to a background task via
   `BackgroundTasks` if you want to shave off the DB write time from the
